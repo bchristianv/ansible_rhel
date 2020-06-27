@@ -1,0 +1,63 @@
+---
+
+- name: Setup Red Hat Enterprise Linux 8.x Workstation
+  hosts: localhost
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: refresh subscription-manager
+      command: 'subscription-manager refresh'
+
+    - name: install workstation package groups
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - '@Common NetworkManager submodules'
+        - '@Core'
+        - '@Fonts'
+        - '@Guest Desktop Agents'
+        - '@Hardware Support'
+        - '@Internet Browser'
+        - '@Multimedia'
+        - '@Printing Client'
+        - '@Standard'
+        - '@base-x'
+
+    - name: install gnome package group without cheese, gnome-boxes, orca
+      dnf:
+        name: '@GNOME'
+        state: present
+        exclude:
+          - cheese
+          - gnome-boxes
+          - orca
+
+    - name: install workstation product core package group without evolution, pidgin
+      dnf:
+        name: '@Workstation product core'
+        state: present
+        exclude:
+          - evolution*
+          - pidgin
+
+    - name: update all packages
+      dnf:
+        name: "*"
+        state: latest
+      register: update_result
+
+    - name: get systemctl default target
+      command: 'systemctl get-default'
+      register: get_target_result
+
+    - name: ensure systemctl default target is graphical.target
+      command: 'systemctl set-default graphical.target'
+      when: get_target_result.stdout != 'graphical.target'
+      register: set_target_result
+
+    - name: reboot into desktop environment
+      reboot:
+      when: set_target_result is changed or
+            update_result is changed
