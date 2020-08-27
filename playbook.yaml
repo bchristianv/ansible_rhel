@@ -59,7 +59,7 @@
       when: get_target_result.stdout != 'graphical.target'
       register: set_target_result
 
-    - name: reboot into desktop environment
-      reboot:
-      when: set_target_result is changed or
-            update_result is changed
+    # - name: reboot into desktop environment
+    #   reboot:
+    #   when: set_target_result is changed or
+    #         update_result is changed
